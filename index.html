@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formular de cunoaștere și implicare</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --aur-black:#141414;
+    --aur-yellow:#F4C21A;
+    --gray-bg:#f4f4f4;
+    --border:#dcdcdc;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:Arial, Helvetica, sans-serif;
+    background:var(--gray-bg);
+    margin:0;
+    padding:0 0 60px 0;
+    color:#1a1a1a;
+  }
+  header{
+    background:var(--aur-black);
+    padding:22px 20px;
+    text-align:center;
+  }
+  header h1{
+    color:var(--aur-yellow);
+    font-size:20px;
+    letter-spacing:0.5px;
+    margin:0;
+    text-transform:uppercase;
+  }
+  header p{
+    color:#cfcfcf;
+    margin:6px 0 0;
+    font-size:13px;
+  }
+  .wrap{
+    max-width:640px;
+    margin:24px auto;
+    background:#fff;
+    border-radius:10px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.08);
+    overflow:hidden;
+  }
+  form{padding:24px 26px;}
+  .field{margin-bottom:20px;}
+  label{
+    display:block;
+    font-weight:bold;
+    margin-bottom:6px;
+    font-size:14px;
+  }
+  input[type=text], input[type=tel], textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:6px;
+    font-family:inherit;
+    font-size:14px;
+    background:#fafafa;
+  }
+  textarea{resize:vertical; min-height:70px;}
+  input:focus, textarea:focus{
+    outline:none;
+    border-color:var(--aur-yellow);
+    background:#fff;
+  }
+  .checkbox-group label, .radio-group label{
+    font-weight:normal;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:8px;
+    font-size:14px;
+    cursor:pointer;
+  }
+  .checkbox-group input, .radio-group input{
+    width:17px;height:17px;flex:none;accent-color:var(--aur-black);
+  }
+  .altele-input{
+    margin-left:25px;
+    margin-top:-4px;
+    width:calc(100% - 25px);
+  }
+  .submit-btn{
+    width:100%;
+    background:var(--aur-black);
+    color:var(--aur-yellow);
+    border:none;
+    padding:13px;
+    font-size:15px;
+    font-weight:bold;
+    border-radius:6px;
+    cursor:pointer;
+    margin-top:8px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  .submit-btn:hover{background:#000;}
+  .confirm{
+    display:none;
+    background:#e9f9ee;
+    color:#1a7a3c;
+    border:1px solid #b6e5c4;
+    padding:12px 14px;
+    border-radius:6px;
+    margin:0 26px 20px;
+    font-size:14px;
+  }
+  .admin{
+    display:none;
+    max-width:640px;
+    margin:0 auto 40px;
+    background:#fff;
+    border-radius:10px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.08);
+    padding:18px 26px;
+  }
+  .admin.visible{display:block;}
+  .admin-link{
+    display:block;
+    text-align:center;
+    color:#bbb;
+    font-size:11px;
+    margin:10px auto 0;
+    cursor:pointer;
+    user-select:none;
+  }
+  .admin-link:hover{color:#888;}
+  .admin h2{font-size:14px; margin:0 0 10px; color:#555; text-transform:uppercase; letter-spacing:0.5px;}
+  .admin p{font-size:13px; color:#666; margin:4px 0 14px;}
+  .admin-buttons{display:flex; gap:10px; flex-wrap:wrap;}
+  .admin-buttons button{
+    flex:1;
+    min-width:180px;
+    padding:11px;
+    border-radius:6px;
+    border:1px solid var(--border);
+    background:#fafafa;
+    font-size:13px;
+    font-weight:bold;
+    cursor:pointer;
+  }
+  #exportBtn{background:var(--aur-yellow); border-color:var(--aur-yellow); color:#1a1a1a;}
+  #clearBtn{color:#b02a2a;}
+  .count{font-size:13px; color:#555; margin-top:12px;}
+  .required{color:#b02a2a;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Formular de cunoaștere și implicare</h1>
+  <p>Alianța pentru Unirea Românilor — Sector 5</p>
+</header>
+
+<div class="wrap">
+  <div class="confirm" id="confirmMsg">✓ Răspunsul a fost salvat. Mulțumim!</div>
+  <form id="mainForm">
+    <div class="field">
+      <label>Nume și prenume <span class="required">*</span></label>
+      <input type="text" id="nume" required>
+    </div>
+    <div class="field">
+      <label>Telefon <span class="required">*</span></label>
+      <input type="tel" id="telefon" required>
+    </div>
+    <div class="field">
+      <label>1. Cu ce te ocupi în prezent?</label>
+      <textarea id="q1"></textarea>
+    </div>
+    <div class="field">
+      <label>2. În ce domenii ai experiență profesională sau de voluntariat?</label>
+      <textarea id="q2"></textarea>
+    </div>
+    <div class="field">
+      <label>3. Care sunt cele mai importante competențe și puncte forte ale tale?</label>
+      <textarea id="q3"></textarea>
+    </div>
+    <div class="field">
+      <label>4. Ce ai putea oferi comunității prin experiența sau cunoștințele tale?</label>
+      <textarea id="q4"></textarea>
+    </div>
+    <div class="field">
+      <label>5. În ce activități ți-ar plăcea să te implici?</label>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="q5" value="Organizare evenimente"> Organizare evenimente</label>
+        <label><input type="checkbox" name="q5" value="Comunicare / Social Media"> Comunicare / Social Media</label>
+        <label><input type="checkbox" name="q5" value="Relația cu membrii"> Relația cu membrii</label>
+        <label><input type="checkbox" name="q5" value="Coordonare voluntari"> Coordonare voluntari</label>
+        <label><input type="checkbox" name="q5" value="Parteneriate / Sponsori"> Parteneriate / Sponsori</label>
+        <label><input type="checkbox" name="q5" value="Proiecte sociale"> Proiecte sociale</label>
+        <label><input type="checkbox" id="q5AlteleCheck"> Altele:</label>
+        <input type="text" class="altele-input" id="q5Altele" placeholder="Specifică...">
+      </div>
+    </div>
+    <div class="field">
+      <label>6. Cât timp poți aloca lunar pentru activitățile organizației?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="q6" value="Ocazional, la nevoie"> Ocazional, la nevoie</label>
+        <label><input type="radio" name="q6" value="2–4 ore/lună"> 2–4 ore/lună</label>
+        <label><input type="radio" name="q6" value="1–2 ore/săptămână"> 1–2 ore/săptămână</label>
+        <label><input type="radio" name="q6" value="Peste 2 ore/săptămână"> Peste 2 ore/săptămână</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>7. Dacă ai avea libertatea să inițiezi un proiect pentru femeile din Sectorul 5, care ar fi acesta?</label>
+      <textarea id="q7"></textarea>
+    </div>
+    <button type="submit" class="submit-btn">Trimite răspunsul</button>
+  </form>
+</div>
+
+<span class="admin-link" id="adminToggle">·</span>
+
+<div class="admin" id="adminPanel">
+  <h2>Panou administrare (doar pentru organizatori)</h2>
+  <p>Răspunsurile se salvează în acest browser. Apasă „Exportă în Excel" periodic pentru a descărca toate răspunsurile într-un fișier .xlsx, pe care îl poți muta/copia peste raspunsuri_formular.xlsx din folderul Diana.</p>
+  <div class="admin-buttons">
+    <button type="button" id="exportBtn">⬇ Exportă în Excel</button>
+    <button type="button" id="clearBtn">🗑 Șterge toate răspunsurile</button>
+  </div>
+  <div class="count" id="countLabel">0 răspunsuri salvate în acest browser.</div>
+</div>
+
+<script>
+const STORAGE_KEY = "aur_sector5_raspunsuri";
+
+function loadEntries(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch(e){ return []; }
+}
+function saveEntries(entries){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+function updateCount(){
+  const n = loadEntries().length;
+  document.getElementById('countLabel').textContent =
+    n === 0 ? "0 răspunsuri salvate în acest browser." :
+    n + (n === 1 ? " răspuns salvat în acest browser." : " răspunsuri salvate în acest browser.");
+}
+
+document.getElementById('mainForm').addEventListener('submit', function(e){
+  e.preventDefault();
+
+  const checked = Array.from(document.querySelectorAll('input[name="q5"]:checked')).map(cb => cb.value);
+  const altele = document.getElementById('q5Altele').value.trim();
+  if(document.getElementById('q5AlteleCheck').checked && altele){
+    checked.push("Altele: " + altele);
+  }
+
+  const q6el = document.querySelector('input[name="q6"]:checked');
+
+  const entry = {
+    "Data completării": new Date().toLocaleString('ro-RO'),
+    "Nume și prenume": document.getElementById('nume').value.trim(),
+    "Telefon": document.getElementById('telefon').value.trim(),
+    "Cu ce te ocupi în prezent?": document.getElementById('q1').value.trim(),
+    "Domenii experiență profesională/voluntariat": document.getElementById('q2').value.trim(),
+    "Competențe și puncte forte": document.getElementById('q3').value.trim(),
+    "Ce poate oferi comunității": document.getElementById('q4').value.trim(),
+    "Activități în care vrea să se implice": checked.join(", "),
+    "Timp alocat lunar": q6el ? q6el.value : "",
+    "Idee de proiect pentru femeile din Sectorul 5": document.getElementById('q7').value.trim()
+  };
+
+  const entries = loadEntries();
+  entries.push(entry);
+  saveEntries(entries);
+  updateCount();
+
+  document.getElementById('mainForm').reset();
+  const msg = document.getElementById('confirmMsg');
+  msg.style.display = 'block';
+  setTimeout(()=>{ msg.style.display = 'none'; }, 3500);
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+
+document.getElementById('exportBtn').addEventListener('click', function(){
+  const entries = loadEntries();
+  if(entries.length === 0){
+    alert("Nu există răspunsuri de exportat încă.");
+    return;
+  }
+  const ws = XLSX.utils.json_to_sheet(entries);
+  ws['!cols'] = [
+    {wch:16},{wch:20},{wch:16},{wch:26},{wch:30},{wch:30},{wch:30},{wch:30},{wch:16},{wch:34}
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Raspunsuri");
+  const stamp = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, "raspunsuri_formular_" + stamp + ".xlsx");
+});
+
+document
