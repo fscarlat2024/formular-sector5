@@ -100,6 +100,7 @@
     letter-spacing:0.5px;
   }
   .submit-btn:hover{background:#000;}
+  .submit-btn:disabled{opacity:0.6; cursor:default;}
   .confirm{
     display:none;
     background:#e9f9ee;
@@ -109,6 +110,16 @@
     border-radius:6px;
     margin:0 26px 20px;
     font-size:14px;
+  }
+  .warn{
+    display:none;
+    background:#fff6e0;
+    color:#8a5a00;
+    border:1px solid #f2d78a;
+    padding:12px 14px;
+    border-radius:6px;
+    margin:0 26px 20px;
+    font-size:13px;
   }
   .admin{
     display:none;
@@ -159,6 +170,7 @@
 
 <div class="wrap">
   <div class="confirm" id="confirmMsg">✓ Răspunsul a fost salvat. Mulțumim!</div>
+  <div class="warn" id="warnMsg">⚠ Răspunsul a fost salvat local pe acest dispozitiv, dar nu am putut confirma trimiterea către server (verifică internetul). Va fi retrimis dacă mai apeși o dată sau folosește exportul din panoul de administrare.</div>
   <form id="mainForm">
     <div class="field">
       <label>Nume și prenume <span class="required">*</span></label>
@@ -210,7 +222,7 @@
       <label>7. Dacă ai avea libertatea să inițiezi un proiect pentru femeile din Sectorul 5, care ar fi acesta?</label>
       <textarea id="q7"></textarea>
     </div>
-    <button type="submit" class="submit-btn">Trimite răspunsul</button>
+    <button type="submit" class="submit-btn" id="submitBtn">Trimite răspunsul</button>
   </form>
 </div>
 
@@ -218,15 +230,23 @@
 
 <div class="admin" id="adminPanel">
   <h2>Panou administrare (doar pentru organizatori)</h2>
-  <p>Răspunsurile se salvează în acest browser. Apasă „Exportă în Excel" periodic pentru a descărca toate răspunsurile într-un fișier .xlsx, pe care îl poți muta/copia peste raspunsuri_formular.xlsx din folderul Diana.</p>
+  <p>Răspunsurile trimise cu succes ajung automat în Google Sheet-ul central (vezi link-ul din instrucțiunile de configurare). Fiecare dispozitiv păstrează și o copie locală, ca rezervă — apasă „Exportă în Excel" dacă vrei să descarci manual copiile locale salvate pe ACEST dispozitiv.</p>
   <div class="admin-buttons">
-    <button type="button" id="exportBtn">⬇ Exportă în Excel</button>
-    <button type="button" id="clearBtn">🗑 Șterge toate răspunsurile</button>
+    <button type="button" id="exportBtn">⬇ Exportă în Excel (copie locală)</button>
+    <button type="button" id="clearBtn">🗑 Șterge copiile locale de pe acest dispozitiv</button>
   </div>
-  <div class="count" id="countLabel">0 răspunsuri salvate în acest browser.</div>
+  <div class="count" id="countLabel">0 răspunsuri salvate local pe acest dispozitiv.</div>
 </div>
 
 <script>
+// ============================================================================
+// IMPORTANT: inlocuieste URL-ul de mai jos cu URL-ul Web App-ului tau Google
+// Apps Script, obtinut dupa ce publici scriptul (vezi instructiunile primite
+// separat). Fara acest URL, raspunsurile se salveaza DOAR local, pe fiecare
+// dispozitiv in parte, si nu ajung centralizat la tine.
+// ============================================================================
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxBT99Sz8pTFjRDASV9fxcFuGOVi0hMjHtSHmiCj5wJSIHkELIUkEK6dWk65xoB9xnX/exec";
+
 const STORAGE_KEY = "aur_sector5_raspunsuri";
 
 function loadEntries(){
@@ -239,11 +259,30 @@ function saveEntries(entries){
 function updateCount(){
   const n = loadEntries().length;
   document.getElementById('countLabel').textContent =
-    n === 0 ? "0 răspunsuri salvate în acest browser." :
-    n + (n === 1 ? " răspuns salvat în acest browser." : " răspunsuri salvate în acest browser.");
+    n === 0 ? "0 răspunsuri salvate local pe acest dispozitiv." :
+    n + (n === 1 ? " răspuns salvat local pe acest dispozitiv." : " răspunsuri salvate local pe acest dispozitiv.");
 }
 
-document.getElementById('mainForm').addEventListener('submit', function(e){
+async function sendToServer(entry){
+  if(!SCRIPT_URL || SCRIPT_URL.indexOf("PUNE_AICI") !== -1){
+    return false; // nu e configurat inca
+  }
+  try{
+    // mode 'no-cors' e necesar pentru Google Apps Script Web Apps apelate din
+    // JavaScript in browser; nu putem citi raspunsul, dar cererea ajunge la script.
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(entry)
+    });
+    return true;
+  }catch(err){
+    return false;
+  }
+}
+
+document.getElementById('mainForm').addEventListener('submit', async function(e){
   e.preventDefault();
 
   const checked = Array.from(document.querySelectorAll('input[name="q5"]:checked')).map(cb => cb.value);
@@ -267,22 +306,40 @@ document.getElementById('mainForm').addEventListener('submit', function(e){
     "Idee de proiect pentru femeile din Sectorul 5": document.getElementById('q7').value.trim()
   };
 
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Se trimite...";
+
+  // salvam local mereu, ca rezerva (chiar daca trimiterea la server reuseste)
   const entries = loadEntries();
   entries.push(entry);
   saveEntries(entries);
   updateCount();
 
+  const sentOk = await sendToServer(entry);
+
   document.getElementById('mainForm').reset();
-  const msg = document.getElementById('confirmMsg');
-  msg.style.display = 'block';
-  setTimeout(()=>{ msg.style.display = 'none'; }, 3500);
+  submitBtn.disabled = false;
+  submitBtn.textContent = "Trimite răspunsul";
+
+  const confirmMsg = document.getElementById('confirmMsg');
+  const warnMsg = document.getElementById('warnMsg');
+  if(sentOk){
+    confirmMsg.style.display = 'block';
+    warnMsg.style.display = 'none';
+    setTimeout(()=>{ confirmMsg.style.display = 'none'; }, 3500);
+  } else {
+    confirmMsg.style.display = 'none';
+    warnMsg.style.display = 'block';
+    setTimeout(()=>{ warnMsg.style.display = 'none'; }, 6000);
+  }
   window.scrollTo({top:0, behavior:'smooth'});
 });
 
 document.getElementById('exportBtn').addEventListener('click', function(){
   const entries = loadEntries();
   if(entries.length === 0){
-    alert("Nu există răspunsuri de exportat încă.");
+    alert("Nu există răspunsuri salvate local pe acest dispozitiv.");
     return;
   }
   const ws = XLSX.utils.json_to_sheet(entries);
@@ -295,4 +352,12 @@ document.getElementById('exportBtn').addEventListener('click', function(){
   XLSX.writeFile(wb, "raspunsuri_formular_" + stamp + ".xlsx");
 });
 
-document
+document.getElementById('clearBtn').addEventListener('click', function(){
+  if(confirm("Sigur vrei să ștergi copiile locale salvate pe acest dispozitiv? Răspunsurile deja trimise cu succes la server NU se pierd, doar copia locală de rezervă.")){
+    localStorage.removeItem(STORAGE_KEY);
+    updateCount();
+  }
+});
+
+document.getElementById('adminToggle').addEventListener('click', function(){
+  document.getElementById('adminPanel').classLi
